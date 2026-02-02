@@ -1,3 +1,8 @@
+#include <complex>
+#include <iostream>
+
+#define PI 3.14159265358979323846
+
 #include "portaudio.h"
 
 typedef struct
@@ -23,13 +28,18 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
     {
         *out++ = data->left_phase;  /* left */
         *out++ = data->right_phase;  /* right */
-        /* Generate simple sawtooth phaser that ranges between -1.0 and 1.0. */
-        data->left_phase += 0.01f;
-        /* When signal reaches top, drop back down. */
-        if (data->left_phase >= 1.0f) data->left_phase -= 2.0f;
-        /* higher pitch so we can distinguish left and right. */
-        data->right_phase += 0.03f;
-        if (data->right_phase >= 1.0f) data->right_phase -= 2.0f;
+        ///* Generate simple sawtooth phaser that ranges between -1.0 and 1.0. */
+        //data->left_phase += 0.01f;
+        ///* When signal reaches top, drop back down. */
+        //if (data->left_phase >= 1.0f) data->left_phase -= 2.0f;
+        ///* higher pitch so we can distinguish left and right. */
+        //data->right_phase += 0.03f;
+        //if (data->right_phase >= 1.0f) data->right_phase -= 2.0f;
+
+        data->left_phase = std::cos(i * PI/6.0);
+        data->right_phase = std::cos(i * PI / 6.0);
+
+        std::cout << data->left_phase << " " << data->right_phase << std::endl;
     }
     return 0;
 }
@@ -64,7 +74,7 @@ int main() {
 
     err = Pa_StartStream(stream);
 
-    Pa_Sleep(3 * 1000);
+    Pa_Sleep(10 * 1000);
 
     err = Pa_StopStream(stream);
     err = Pa_CloseStream(stream);
