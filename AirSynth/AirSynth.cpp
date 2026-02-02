@@ -7,6 +7,7 @@
 
 typedef struct
 {
+    int pa_i;
     float left_phase;
     float right_phase;
 }
@@ -36,10 +37,15 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
         //data->right_phase += 0.03f;
         //if (data->right_phase >= 1.0f) data->right_phase -= 2.0f;
 
-        data->left_phase = std::cos(i * PI/6.0);
-        data->right_phase = std::cos(i * PI / 6.0);
+        data->left_phase = std::cos(data->pa_i * PI/6.0);
+        data->right_phase = std::cos(data->pa_i * PI/6.0);
+			
 
-        std::cout << data->left_phase << " " << data->right_phase << std::endl;
+        std::cout << data->pa_i << ": (" << data->left_phase << ", " << data->right_phase << ")" << std::endl;
+
+        ++data->pa_i;
+
+        if (data->pa_i == 20) data->pa_i = 0;
     }
     return 0;
 }
@@ -50,7 +56,7 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
 int main() {
     Pa_Initialize();
 
-    static paTestData data;
+    static paTestData data{ 0, 0, 0 };
 
     PaStream* stream;
     PaError err;
