@@ -1,9 +1,35 @@
 #include <complex>
+#include <cmath>
 #include <iostream>
 
 #define PI 3.14159265358979323846
+#define SAMPLE_RATE (44100)
+#define FREQ 440 // A = 440hz
+#define AMPLITUDE 10
 
 #include "portaudio.h"
+
+// generate with the sampling_inc? idkjh
+static double table[] = {
+    0,
+    0.5,
+    0.707107,
+    0.866025,
+    1,
+    0.866025,
+    0.707107,
+    0.5,
+    0,
+    -0.5,
+    -0.707107,
+    -0.866025,
+    -1,
+    -0.866025,
+    -0.707107,
+    -0.5
+};
+
+static int table_len = 16;
 
 typedef struct
 {
@@ -25,6 +51,8 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
     unsigned int i;
     (void)inputBuffer; /* Prevent unused variable warning. */
 
+    int phase = 0;
+
     for (i = 0; i < framesPerBuffer; i++)
     {
         *out++ = data->left_phase;  /* left */
@@ -36,10 +64,12 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
         ///* higher pitch so we can distinguish left and right. */
         //data->right_phase += 0.03f;
         //if (data->right_phase >= 1.0f) data->right_phase -= 2.0f;
+        double sampling_inc = static_cast<double>(table_len) / SAMPLE_RATE * FREQ;
+        std::cout << ">> " << sampling_inc << std::endl;
+        phase = std::fmod(phase + sampling_inc, table_len);
 
-        data->left_phase = std::cos(data->pa_i * PI/6.0);
-        data->right_phase = std::cos(data->pa_i * PI/6.0);
-			
+    	data->left_phase = AMPLITUDE * table[phase];
+        data->right_phase = AMPLITUDE * table[phase];
 
         std::cout << data->pa_i << ": (" << data->left_phase << ", " << data->right_phase << ")" << std::endl;
 
@@ -49,9 +79,6 @@ static int patestCallback(const void* inputBuffer, void* outputBuffer,
     }
     return 0;
 }
-
-#define SAMPLE_RATE (44100)
-
 
 int main() {
     Pa_Initialize();
@@ -84,7 +111,6 @@ int main() {
 
     err = Pa_StopStream(stream);
     err = Pa_CloseStream(stream);
-
 
     Pa_Terminate();
     return 0;
