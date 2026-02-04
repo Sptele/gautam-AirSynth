@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Files">
+      <UniqueIdentifier>{fcf3fcb4-9dd2-4d31-a2a5-c23b2f25aa9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PortAudio v19 Files">
+      <UniqueIdentifier>{ae1c545a-4bc9-4493-959b-4c540bdf1f3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ASIO 2 SDK Files">
+      <UniqueIdentifier>{85409c62-dfc0-435e-ad94-789ceb7f8b27}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\example\sine.cxx">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_allocation.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\asio\pa_asio.cpp">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_converters.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_cpuload.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_dither.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_front.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_process.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\skeleton\pa_hostapi_skeleton.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_stream.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\common\pa_trace.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\dsound\pa_win_ds.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\dsound\pa_win_ds_dynlink.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os\win\pa_win_hostapis.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os\win\pa_win_util.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\wasapi\pa_win_wasapi.cpp">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\hostapi\wmme\pa_win_wmme.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os\win\pa_x86_plain_converters.c">
+      <Filter>PortAudio v19 Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\asiosdk2\common\asio.cpp">
+      <Filter>ASIO 2 SDK Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\asiosdk2\host\asiodrivers.cpp">
+      <Filter>ASIO 2 SDK Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\asiosdk2\host\pc\asiolist.cpp">
+      <Filter>ASIO 2 SDK Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
