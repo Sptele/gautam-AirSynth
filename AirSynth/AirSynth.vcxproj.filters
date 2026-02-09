@@ -24,12 +24,18 @@
     <ClCompile Include="ADSREnvelope.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ComplexWave.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ADSREnvelope.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ComplexWave.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -43,6 +43,41 @@ ADSREnvelope::~ADSREnvelope()
 	delete[] this->table;
 }
 
+// Copy constructor: deep copies the dynamically allocated table and copies parameters.
+ADSREnvelope::ADSREnvelope(const ADSREnvelope& other)
+	: tableLen(other.tableLen),
+	L(other.L), A(other.A), c_a(other.c_a), c_d(other.c_d), c_s(other.c_s), c_r(other.c_r)
+{
+	this->table = new float[tableLen];
+	std::copy(other.table, other.table + tableLen, this->table);
+}
+
+// Copy assignment: only allowed when table lengths match because tableLen is const.
+// Performs deep copy of table contents and copies other parameters.
+// Throws std::invalid_argument if lengths differ.
+ADSREnvelope& ADSREnvelope::operator=(const ADSREnvelope& other)
+{
+	if (this == &other) return *this;
+
+	if (other.tableLen != this->tableLen)
+	{
+		throw std::invalid_argument("ADSREnvelope::operator=: cannot assign envelopes with differing tableLen (tableLen is const).");
+	}
+
+	// copy scalar parameters
+	this->L = other.L;
+	this->A = other.A;
+	this->c_a = other.c_a;
+	this->c_d = other.c_d;
+	this->c_s = other.c_s;
+	this->c_r = other.c_r;
+
+	// deep copy table contents
+	std::copy(other.table, other.table + tableLen, this->table);
+
+	return *this;
+}
+
 void ADSREnvelope::print_table() const
 {
 	for (size_t i = 0; i < tableLen; ++i)

@@ -14,8 +14,12 @@
 class Sine
 {
 public:
-    Sine(ADSREnvelope& amp_envelope, float freq, size_t tableLength, float length);
+    Sine(ADSREnvelope& amp_envelope, float freq, size_t tableLength, float length, float gain);
     ~Sine();
+    // deep-copy semantics
+    Sine(const Sine& other);
+    Sine& operator=(const Sine& other);
+
 
     void print_table() const;
 
@@ -31,10 +35,11 @@ public:
     void monoOffsetStereo(float value, float offset);
 
     float get_length() const { return length;  }
-private:
+
     float* table;
     const size_t tableLen;
 
+    float gain;
     float freq;
     ADSREnvelope& amp;
     float left_phase;

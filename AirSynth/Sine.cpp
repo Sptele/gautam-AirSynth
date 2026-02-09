@@ -1,7 +1,7 @@
 #include "Sine.h"
 
-Sine::Sine(ADSREnvelope& amplitude, float freq, size_t tableLen, float length)
-: tableLen(tableLen), amp(amplitude), freq(freq), length(length), left_phase(0), right_phase(0), t_phase(0), amp_phase(0)
+Sine::Sine(ADSREnvelope& amplitude, float freq, size_t tableLen, float length, float gain)
+: tableLen(tableLen), amp(amplitude), freq(freq), length(length), left_phase(0), right_phase(0), t_phase(0), amp_phase(0), gain(gain)
 {
 	table = new float[this->tableLen];
 
@@ -24,6 +24,54 @@ Sine::Sine(ADSREnvelope& amplitude, float freq, size_t tableLen, float length)
 Sine::~Sine()
 {
 	delete[] table;
+}
+
+// Copy constructor: deep copies the table and copies scalar state.
+// The amp reference is bound to the same envelope as the source.
+Sine::Sine(const Sine& other)
+	: tableLen(other.tableLen),
+	freq(other.freq),
+	amp(other.amp),
+	left_phase(other.left_phase),
+	right_phase(other.right_phase),
+	t_phase(other.t_phase),
+	amp_phase(other.amp_phase),
+	length(other.length),
+	gain(other.gain)
+{
+	this->table = new float[this->tableLen];
+	std::copy(other.table, other.table + this->tableLen, this->table);
+}
+
+// Copy assignment: only allowed when table lengths match and amp reference is the same.
+// Throws std::invalid_argument if lengths differ or amp differs (reference cannot be reseated).
+Sine& Sine::operator=(const Sine& other)
+{
+	if (this == &other) return *this;
+
+	if (other.tableLen != this->tableLen)
+	{
+		throw std::invalid_argument("Sine::operator=: cannot assign Sine objects with differing tableLen (tableLen is const).");
+	}
+
+	if (&other.amp != &this->amp)
+	{
+		throw std::invalid_argument("Sine::operator=: cannot assign Sine objects with different amp references.");
+	}
+
+	// copy scalar parameters
+	this->freq = other.freq;
+	this->left_phase = other.left_phase;
+	this->right_phase = other.right_phase;
+	this->t_phase = other.t_phase;
+	this->amp_phase = other.amp_phase;
+	this->length = other.length;
+	this->gain = other.gain;
+
+	// deep copy table contents
+	std::copy(other.table, other.table + this->tableLen, this->table);
+
+	return *this;
 }
 
 void Sine::print_table() const
