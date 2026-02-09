@@ -129,10 +129,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ADSREnvelope.cpp" />
     <ClCompile Include="AirSynth.cpp" />
     <ClCompile Include="Sine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ADSREnvelope.h" />
     <ClInclude Include="Sine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
