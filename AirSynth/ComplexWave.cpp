@@ -10,9 +10,17 @@ ComplexWave::~ComplexWave()
 	waves.clear();
 }
 
-void ComplexWave::add(const std::unique_ptr<Wave>& ptr)
+void ComplexWave::add_sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain)
 {
-	//waves.push_back(std::move(ptr));
+	synth().push_back(std::make_unique<Sine>(amp_envelope, freq, tableLen, length, gain));
+}
+
+void ComplexWave::add_all_sine(const std::vector<Sine>& vec)
+{
+	for (const Sine& v : vec)
+	{
+		synth().push_back(std::make_unique<Sine>(v));
+	}
 }
 
 float ComplexWave::get_left_phase() const

@@ -35,7 +35,6 @@ ADSREnvelope::ADSREnvelope(size_t tableLen, float L, float A, float c_a, float c
 			table[i] = s - (s / r_t) * (x - (a + d + s_t));
 		}
 	}
-
 }
 
 ADSREnvelope::~ADSREnvelope()

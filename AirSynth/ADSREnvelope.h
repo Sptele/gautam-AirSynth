@@ -8,12 +8,12 @@ class ADSREnvelope
 	// Release is percentage of total time
 public:
 	ADSREnvelope(size_t tableLen, float L, float A, float c_a, float c_d, float c_s, float c_r);
+	ADSREnvelope() : tableLen(0) {}
 	~ADSREnvelope();
 
 	// deep-copy semantics
 	ADSREnvelope(const ADSREnvelope& other);
 	ADSREnvelope& operator=(const ADSREnvelope& other);
-
 
 	void print_table() const;
 

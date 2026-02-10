@@ -16,6 +16,7 @@ class Sine : public Wave
 {
 public:
     Sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain);
+    Sine() : tableLen(0), amp(ADSREnvelope()) {};
     ~Sine() override;
     // deep-copy semantics
     Sine(const Sine& other);
@@ -41,11 +42,12 @@ public:
     float get_right_phase() const override { return right_phase; }
 
     void stream(unsigned int curr_frame) override;
+
 private:
     float* table;
     const size_t tableLen;
 
-    ADSREnvelope& amp;
+    ADSREnvelope amp;
     float freq;
     float length;
     float gain;
