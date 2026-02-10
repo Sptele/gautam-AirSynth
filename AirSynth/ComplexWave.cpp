@@ -12,7 +12,7 @@ ComplexWave::~ComplexWave()
 
 void ComplexWave::add(const std::unique_ptr<Wave>& ptr)
 {
-	waves.push_back(std::move(ptr));
+	//waves.push_back(std::move(ptr));
 }
 
 float ComplexWave::get_left_phase() const

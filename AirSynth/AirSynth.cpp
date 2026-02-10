@@ -37,9 +37,9 @@ int main(int argv, char** argc) {
 
     for (int i = 0; i < 4; ++i)
     {
-        wave.add(
-            std::make_unique<Sine>(env, freq * (i + 1), TABLE_LEN, length, gains[i])
-        );
+        std::unique_ptr<Wave> temp = std::make_unique<Sine>(env, freq * (i + 1), TABLE_LEN, length, gains[i]);
+
+            wave.add(temp);
     }
 
 
