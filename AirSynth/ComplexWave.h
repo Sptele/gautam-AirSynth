@@ -3,15 +3,18 @@
 
 #include "Sine.h"
 
-class ComplexWave
+class ComplexWave : public Wave
 {
 public:
-	void add(ADSREnvelope& amp_envelope, float freq, size_t tableLength, float length, float gain);
-	float sum_left_phases() const;
-	float sum_right_phases() const;
-
 	ComplexWave(float gain);
+	~ComplexWave() override;
 
+	void add(const std::unique_ptr<Wave>& ptr);
+	float get_left_phase() const override;
+	float get_right_phase() const override;
+	float get_gain() const override { return gain; }
+
+	void stream(unsigned int curr_frame) override;
 
 	static int stream(const void* inputBuffer, void* outputBuffer,
 		unsigned long framesPerBuffer,
@@ -20,7 +23,7 @@ public:
 		void* userData);
 private:
 
-	std::vector<Sine> waves;
+	std::vector<std::unique_ptr<Wave>> waves;
 	float gain;
 };
 

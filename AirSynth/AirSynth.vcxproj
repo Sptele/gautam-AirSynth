@@ -138,6 +138,7 @@
     <ClInclude Include="ADSREnvelope.h" />
     <ClInclude Include="ComplexWave.h" />
     <ClInclude Include="Sine.h" />
+    <ClInclude Include="Wave.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

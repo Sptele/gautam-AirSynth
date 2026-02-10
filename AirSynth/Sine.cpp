@@ -1,7 +1,7 @@
 #include "Sine.h"
 
 Sine::Sine(ADSREnvelope& amplitude, float freq, size_t tableLen, float length, float gain)
-: tableLen(tableLen), amp(amplitude), freq(freq), length(length), left_phase(0), right_phase(0), t_phase(0), amp_phase(0), gain(gain)
+: tableLen(tableLen), amp(amplitude), freq(freq), length(length), gain(gain), left_phase(0), right_phase(0), t_phase(0), amp_phase(0)
 {
 	table = new float[this->tableLen];
 
@@ -140,4 +140,16 @@ void Sine::monoOffsetStereo(float value, float offset)
 {
 	left_phase = value;
 	right_phase = offset * value;
+}
+
+void Sine::stream(unsigned int curr_frame)
+{
+	float sam_i = freq / SAMPLE_RATE * tableLen;
+
+	t_phase += sam_i;
+
+	mono(get_gain() * amp[amp_phase] * interpolate(t_phase));
+
+	t_phase = std::fmod(t_phase, tableLen);
+	amp_phase = std::fmod(amp_phase + static_cast<float>(tableLen) / (length * SAMPLE_RATE), tableLen);
 }

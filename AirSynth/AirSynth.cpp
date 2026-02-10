@@ -3,7 +3,7 @@
 #include <iostream>
 
 #define SAMPLE_RATE (44100)
-#define AMPLITUDE 50
+#define TABLE_LEN (256)
 
 #include "ADSREnvelope.h"
 #include "ComplexWave.h"
@@ -28,10 +28,8 @@ int main(int argv, char** argc) {
     PaError err;
 
 
-    ADSREnvelope env(256, length, amp, .1f, .01f, .3f, .025f);
+    ADSREnvelope env(TABLE_LEN, length, amp, .1f, .01f, .3f, .025f);
     //env.print_table();
-
-    // TODO: make a wave class so that you can nest complex waves
 
     ComplexWave wave(0.3f);
 
@@ -40,11 +38,12 @@ int main(int argv, char** argc) {
     for (int i = 0; i < 4; ++i)
     {
         wave.add(
-            env, freq * (i+1), 256, length, gains[i]
+            std::make_unique<Sine>(env, freq * (i + 1), TABLE_LEN, length, gains[i])
         );
     }
 
-    err = Pa_OpenDefaultStream(&stream, 0, 2, paFloat32, SAMPLE_RATE, 256, ComplexWave::stream, &wave);
+
+    err = Pa_OpenDefaultStream(&stream, 0, 2, paFloat32, SAMPLE_RATE, TABLE_LEN, ComplexWave::stream, &wave);
 
     err = Pa_StartStream(stream);
 
