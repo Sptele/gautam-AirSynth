@@ -11,10 +11,15 @@ class ComplexWave : public Wave
 public:
 	ComplexWave(float gain);
 	~ComplexWave() override;
+	ComplexWave(const ComplexWave& o);
+
+	std::unique_ptr<Wave> clone() const override;
 
 	void add(const std::unique_ptr<Wave>& ptr) = delete;
 	void add_sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain);
-	void add_all_sine(const std::vector<Sine>& vec);
+	void add_complex(const ComplexWave& o);
+
+	void generate_harmonic_series(float freq, float height, ADSREnvelope& amp_envelope, size_t tableLen, float length, float gain[]);
 	float get_left_phase() const override;
 	float get_right_phase() const override;
 	float get_gain() const override { return gain; }

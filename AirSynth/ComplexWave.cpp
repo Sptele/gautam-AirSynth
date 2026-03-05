@@ -10,16 +10,36 @@ ComplexWave::~ComplexWave()
 	waves.clear();
 }
 
+ComplexWave::ComplexWave(const ComplexWave& o) : gain(o.gain)
+{
+	for (const auto& w : o.waves)
+	{
+		synth().push_back(
+			w->clone()
+		);
+	}
+}
+
+std::unique_ptr<Wave> ComplexWave::clone() const
+{
+	return std::make_unique<ComplexWave>(*this);
+}
+
 void ComplexWave::add_sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain)
 {
 	synth().push_back(std::make_unique<Sine>(amp_envelope, freq, tableLen, length, gain));
 }
 
-void ComplexWave::add_all_sine(const std::vector<Sine>& vec)
+void ComplexWave::add_complex(const ComplexWave& o)
 {
-	for (const Sine& v : vec)
+	synth().push_back(std::make_unique<ComplexWave>(o));
+}
+
+void ComplexWave::generate_harmonic_series(float freq, float height, ADSREnvelope& amp_envelope, size_t tableLen, float length, float gain[])
+{
+	for (int i = 1; i <= height; ++i)
 	{
-		synth().push_back(std::make_unique<Sine>(v));
+		add_sine(amp_envelope, freq * i, tableLen, length, gain[i-1]);
 	}
 }
 

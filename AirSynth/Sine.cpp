@@ -1,5 +1,7 @@
 #include "Sine.h"
 
+#include <iostream>
+
 Sine::Sine(ADSREnvelope& amplitude, float freq, size_t tableLen, float length, float gain)
 : tableLen(tableLen), amp(amplitude), freq(freq), length(length), gain(gain), left_phase(0), right_phase(0), t_phase(0), amp_phase(0)
 {
@@ -40,7 +42,7 @@ Sine::Sine(const Sine& other)
 	gain(other.gain)
 {
 	this->table = new float[this->tableLen];
-	std::copy(other.table, other.table + this->tableLen, this->table);
+	std::copy_n(other.table, this->tableLen, this->table);
 }
 
 // Copy assignment: only allowed when table lengths match and amp reference is the same.
@@ -72,6 +74,11 @@ Sine& Sine::operator=(const Sine& other)
 	std::copy(other.table, other.table + this->tableLen, this->table);
 
 	return *this;
+}
+
+std::unique_ptr<Wave> Sine::clone() const
+{
+	return std::make_unique<Sine>(*this);
 }
 
 void Sine::print_table() const

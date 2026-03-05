@@ -9,6 +9,8 @@ public:
 	virtual void stream(unsigned int curr_frame) = 0;
 	virtual float get_gain() const = 0;
 
+	virtual std::unique_ptr<Wave> clone() const = 0;
+
 	virtual ~Wave() = default;
 
 	static int stream(const void* inputBuffer, void* outputBuffer,

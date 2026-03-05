@@ -3,29 +3,17 @@
 
 #define SAMPLE_RATE (44100)
 #define TABLE_LEN (256)
+#define NUM_ARGS 5
 
 #include "ADSREnvelope.h"
 #include "ComplexWave.h"
 #include "portaudio.h"
 #include "Sine.h"
 
-static std::vector<Sine> generate_harmonic_series(float root_freq, float a, float b, int numSeries, ADSREnvelope& env, size_t tableLen, float length, float gain[])
-{
-	std::vector<Sine> v(numSeries);
-
-	for (int i = 0; i < numSeries; ++i)
-	{
-		Sine temp(env, root_freq * (a * i + b), tableLen, length, gain[i]);
-		v.push_back(temp);
-	}
-
-	return v;
-	
-}
 
 int main(int argv, char** argc)
 {
-	if (argv != 4)
+	if (argv != NUM_ARGS)
 	{
 		std::cerr << "Usage: " << argc[0] << " <amp> <freq> <length>" << std::endl;
 		exit(1);
@@ -35,7 +23,9 @@ int main(int argv, char** argc)
 	float freq = std::stof(argc[2]);
 	float length = std::stof(argc[3]);
 
-	float gains[4] = { 1, 0.1f, 0.2f, 0.5f };
+#define HEIGHT 8
+
+	float gains[HEIGHT] = { 1, 0.8, 0.6, 0.4, 0.3, 0.2, 0.1, 0.05 };
 	ADSREnvelope env(TABLE_LEN, length, amp, .1f, .1f, .3f, .25f);
 
 	Pa_Initialize();
@@ -43,10 +33,23 @@ int main(int argv, char** argc)
 	PaStream* stream;
 	PaError err;
 
-	ComplexWave wave(0.3f);
+	ComplexWave A(0.3f);
 
-	wave.add_all_sine(generate_harmonic_series(freq, 2, 1, 4, env, TABLE_LEN, length, gains));
-	wave.add_all_sine(generate_harmonic_series(freq*1.25, 2, 1, 4, env, TABLE_LEN, length, gains));
+	A.generate_harmonic_series(freq, HEIGHT, env, TABLE_LEN, length, gains);
+
+	ComplexWave B(0.4f);
+
+	B.generate_harmonic_series(freq * 1.1892f, HEIGHT, env, TABLE_LEN, length, gains);
+
+	ComplexWave C(0.3f);
+
+	C.generate_harmonic_series(freq * 1.5f, HEIGHT, env, TABLE_LEN, length, gains);
+
+	ComplexWave wave(1);
+	wave.add_complex(A);
+	wave.add_complex(B);
+	wave.add_complex(C);
+
 
 	
 

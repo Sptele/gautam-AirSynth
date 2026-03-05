@@ -22,6 +22,8 @@ public:
     Sine(const Sine& other);
     Sine& operator=(const Sine& other);
 
+    std::unique_ptr<Wave> clone() const override;
+
     void print_table() const;
 
     float interpolate(float i) const;
