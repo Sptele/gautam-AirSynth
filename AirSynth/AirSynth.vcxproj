@@ -102,14 +102,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\portaudio\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\portaudio\include;C:\Users\Gautam Khajuria\source\repos\AirSynth\opencv\build\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release;C:\Users\Gautam Khajuria\source\repos\AirSynth\opencv\build\x64\vc16\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>portaudio_x64.lib;opencv_world4130d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release\portaudio_x64.dll" "$(OutDir)"</Command>
