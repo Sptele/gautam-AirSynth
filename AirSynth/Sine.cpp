@@ -99,17 +99,20 @@ void Sine::print_table() const
 
 float Sine::interpolate(float i) const
 {
+	if (tableLen == 0 || table == nullptr)
+		return 0.0f;
 
-	int lower = std::floor(i);
+	const int lower = static_cast<int>(std::floor(i));
+	const int higher = static_cast<int>(std::ceil(i));
 
-	if (lower == i) return i; // If i is integer, just return it to avoid computation
+	if (lower <= 0) return table[0];
+	if (higher >= static_cast<int>(tableLen)) return table[tableLen - 1];
 
-	int higher = std::ceil(i);
+	if (lower == higher) return table[lower];
 
-	if (lower < 0) return table[0];
-	if (higher >= tableLen) return table[tableLen - 1];
-
-	return (table[lower] + table[higher]) / 2;
+	// Linear interpolation
+	const float t = i - static_cast<float>(lower);
+	return table[lower] + (table[higher] - table[lower]) * t;
 }
 
 int Sine::stream(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData)

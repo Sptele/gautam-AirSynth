@@ -11,6 +11,8 @@ public:
 
 	virtual std::unique_ptr<Wave> clone() const = 0;
 
+	virtual void rebuild_length(float new_length_sec) {}
+
 	virtual ~Wave() = default;
 
 	static int stream(const void* inputBuffer, void* outputBuffer,

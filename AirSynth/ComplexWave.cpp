@@ -91,6 +91,23 @@ float ComplexWave::get_right_phase() const
 	return get_gain() * sum;
 }
 
+void ComplexWave::rebuild_length(float new_length_sec)
+{
+	auto curr = std::atomic_load(&waves);
+
+	auto copy = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
+	copy->reserve(curr->size());
+
+	for (const auto& w : *curr)
+	{
+		auto new_w = w->clone();
+		new_w->rebuild_length(new_length_sec);
+		copy->push_back(std::move(new_w));
+	}
+
+	std::atomic_store(&waves, copy);
+}
+
 void ComplexWave::stream(unsigned int curr_frame)
 {
 	auto rdr = std::atomic_load(&waves);

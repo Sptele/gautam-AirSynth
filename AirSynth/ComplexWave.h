@@ -26,6 +26,8 @@ public:
 
 	std::vector<std::unique_ptr<Wave>>& synth() { return *std::atomic_load(&waves); }
 
+	void rebuild_length(float new_length_sec) override;
+
 	void stream(unsigned int curr_frame) override;
 
 	static int stream(const void* inputBuffer, void* outputBuffer,

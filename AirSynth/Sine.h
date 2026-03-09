@@ -38,12 +38,15 @@ public:
     void monoOffsetStereo(float value, float offset);
 
     float get_length() const { return length; }
+    float get_freq() const { return freq;  }
 
     float get_gain() const override { return gain; }
     float get_left_phase() const override { return left_phase; }
     float get_right_phase() const override { return right_phase; }
 
     void stream(unsigned int curr_frame) override;
+
+    void rebuild_length(float new_length_sec) override { length = new_length_sec; }
 
 private:
     float* table;

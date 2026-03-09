@@ -17,17 +17,6 @@ sys.path.append(pyd_path)
 
 import AirSynth as syn
 
-"""
-API Requirements for the Synth
-
-The Synth must provide:
-- a function to create and add new waveforms
-    - These waveforms show be a harmonic series, specifically
-- etc...
-
-
-"""
-
 class ROperations(Enum):
     NOTHING = 1
     NEW = 2
@@ -190,6 +179,20 @@ class CameraHandler:
         self.synth = syn.SynthAPI()
         self.synth.start()
 
+        self.running = True
+
+    def request_stop(self):
+        if not self.running:
+            return
+
+        self.running = False
+
+        try:
+            self.synth.stop()
+        finally:
+            if self.cap is not None:
+                self.cap.release()
+            self.pending.clear()
 
     def on_camera_frame(self, result: vision.HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
         ctx = self.pending.pop(timestamp_ms, None)
@@ -199,15 +202,30 @@ class CameraHandler:
         self.with_curr_frame(result, ctx.frame_bgr, ctx.frame_index)
 
     def with_curr_frame(self, result: vision.HandLandmarkerResult, frame: mp.Image, timestamp_ms: int):
-        if result is None:
+        if not self.running or result is None:
             return
 
+        h, w, c = frame.shape
+
+        display_frame = cv2.flip(frame, 1)
+
         if result.hand_landmarks:
-            h, w, c = frame.shape
+
+            # AI Generated
+            def mx(x_px): return (w - 1) - x_px
 
             # Draw each landmark as a filled circle.
             for hand_idx, landmarks in enumerate(result.hand_landmarks):
-                if hand_idx == 1:
+                handedness = None
+
+                if result.handedness and hand_idx < len(result.handedness) and result.handedness[hand_idx]:
+                    handedness = result.handedness[hand_idx][0].category_name
+
+                if handedness not in ("Left", "Right"):
+                    # If you prefer, you can `continue` instead of guessing.
+                    handedness = "Right" if hand_idx == 0 else "Left"
+
+                if handedness == "Left":
                     """
                     LEFT HAND
                     """
@@ -221,7 +239,7 @@ class CameraHandler:
                     x = int(landmarks[self.TRACKER_NUM].x * w)
                     y = int(landmarks[self.TRACKER_NUM].y * h)
 
-                    cv2.circle(frame, (x, y), 3, color, thickness=12)
+                    cv2.circle(display_frame, (mx(x), y), 3, color, thickness=12)
 
                     INDEX_TIP, THUMB_TIP = 20, 4
 
@@ -234,23 +252,18 @@ class CameraHandler:
                     x = int(landmarks[INDEX_TIP].x * w)
                     y = int(landmarks[INDEX_TIP].y * h)
 
-                    cv2.circle(frame, (x, y), 3, color, thickness=4)
+                    cv2.circle(display_frame, (mx(x), y), 3, color, thickness=4)
 
                     x = int(landmarks[THUMB_TIP].x * w)
                     y = int(landmarks[THUMB_TIP].y * h)
 
-                    cv2.circle(frame, (x, y), 3, color, thickness=4)
+                    cv2.circle(display_frame, (mx(x), y), 3, color, thickness=4)
 
-                    if tc and self.tracking_data.l_pinch.new_length:
-                        cv2.putText(frame, f"{self.tracking_data.l_pinch.new_length:.1f}s", (x + 35, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
-
-
+                    if tc and self.tracking_data.l_pinch.new_length is not None:
+                        cv2.putText(display_frame, f"{self.tracking_data.l_pinch.new_length:.1f}s", (mx(x) + 35, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
 
 
-
-                    
-
-                if hand_idx == 0:
+                if handedness == "Right":
                     """
                     RIGHT HAND
                     """
@@ -265,25 +278,20 @@ class CameraHandler:
                     x = int(landmarks[self.TRACKER_NUM].x * w)
                     y = int(landmarks[self.TRACKER_NUM].y * h)
 
-                    cv2.circle(frame, (x, y), 3, color, thickness=12)
+                    cv2.circle(display_frame, (mx(x), y), 3, color, thickness=12)
 
                     if (not self.tracking_data.hands_open[1] and
                         self.tracking_data.new_freq is not None and
                         self.tracking_data.new_gain is not None):  # If right hand is currently closed
                         # Show Frequency, Gain
-                        cv2.putText(frame, f"{self.tracking_data.new_freq:.1f}hz", (x+35, y-15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
-                        cv2.putText(frame, f"{self.tracking_data.new_gain*100:.0f}%", (x+35, y+15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
+                        cv2.putText(display_frame, f"{self.tracking_data.new_freq:.1f}hz", (mx(x)+35, y-15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
+                        cv2.putText(display_frame, f"{self.tracking_data.new_gain*100:.0f}%", (mx(x)+35, y+15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
 
 
-        cv2.imshow("AirSynth", frame)
+        cv2.imshow("AirSynth", display_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            self.synth.stop()
-
-            self.cap.release()
-            cv2.destroyAllWindows()
-            self.pending.clear()
-            
+            self.request_stop()            
 
             return
 
@@ -368,7 +376,7 @@ class CameraHandler:
                 freq, gain = self.tracking_data.pop()
 
                 if freq > 0 and gain > 0:
-                    self.synth.add_waveform_series(freq, gain)
+                    self.synth.add_waveform_series(freq, gain, self.tracking_data.length)
 
             self.bounds.reset_increments()
             return_flag = ROperations.DIE
@@ -403,29 +411,14 @@ class CameraHandler:
 
         ps = self.tracking_data.l_pinch
 
-        # --- Pinch gesture state machine (STUBS) ---
-        # These branches are intentionally left as no-ops, with state updates only.
-        # Implement pinch controls by filling in the three sections:
-        #   1) pinch start   : first frame the pinch is detected
-        #   2) pinch continue: subsequent frames while still pinching
-        #   3) pinch end     : first frame after pinching stops
-        #
-        # You can use ps.base_pos / ps.base_freqs / ps.base_gains to store baselines.
 
         if pinching:
             pinch_pos = (lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y)
 
-            if not ps.active:
-                # PINCH START (edge)
-                # Triggered exactly once when the user transitions from not pinching -> pinching.
-                # Typical use:
-                #   - capture baseline hand position (ps.base_pos = pinch_pos)
-                #   - snapshot current synth params (ps.base_freqs/gains)
-                #   - compute any scaling increments (bounds.compute_increments(...))
+            if not ps.active: # Pinch Start
+        
                 ps.active = True
                 ps.base_pos = pinch_pos
-                ps.base_freqs = []
-                ps.base_gains = []
 
                 self.tracking_data.length = self.bounds.default_length
 
@@ -433,32 +426,21 @@ class CameraHandler:
 
 
 
-            else:
-                # PINCH CONTINUE
-                # Called every frame while the user remains pinching.
-                # Typical use:
-                #   - compute delta from ps.base_pos
-                #   - apply that delta to one or more tracked parameters
-                #   - clamp results using self.bounds.clamp_freq/clamp_gain
+            else: # Pinch Continue
                 diff_y = ps.base_pos[1] - pinch_pos[1]
 
                 if self.bounds.length_inc:
                     ps.new_length = self.bounds.clamp_length(self.bounds.default_length + diff_y * h * self.bounds.length_inc)
 
         else:
-            if ps.active:
-                # PINCH END (edge)
-                # Triggered exactly once when the user transitions from pinching -> not pinching.
-                # Typical use:
-                #   - finalize/commit changes
-                #   - clear any temporary increments
-                #   - reset pinch state
+            if ps.active: # Pinch End
                 ps.active = False
                 ps.base_pos = None
                 
                 self.tracking_data.length = ps.new_length
-
-                print(self.tracking_data.length)
+                
+                if self.tracking_data.length:
+                    self.synth.rebuild_with_new_length(float(self.tracking_data.length))
 
                 ps.new_length = None
 
@@ -469,38 +451,49 @@ class CameraHandler:
 
 
     def spin(self):
-        with vision.HandLandmarker.create_from_options(self.options) as landmarker:
-            frame_index = 0
+        try:
+            with vision.HandLandmarker.create_from_options(self.options) as landmarker:
+                frame_index = 0
 
-            while self.cap.isOpened():
-                good, frame_bgr = self.cap.read()
+                while self.cap.isOpened():
+                    good, frame_bgr = self.cap.read()
 
-                if not good or frame_bgr is None:
-                    print("Failed to read frame from camera. Exiting...")
-                    break
+                    if not good or frame_bgr is None:
+                        print("Failed to read frame from camera. Exiting...")
+                        break
 
-                # MediaPipe Image expects RGB.
-                frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+                    # MediaPipe Image expects RGB.
+                    frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
 
-                # LIVE_STREAM requires monotonically increasing timestamps (ms).
-                timestamp_ms = int(time.time() * 1000)
+                    # LIVE_STREAM requires monotonically increasing timestamps (ms).
+                    timestamp_ms = int(time.time() * 1000)
 
-                # If frames arrive within same ms, ensure uniqueness.
-                while timestamp_ms in self.pending:
-                    timestamp_ms += 1
+                    # If frames arrive within same ms, ensure uniqueness.
+                    while timestamp_ms in self.pending:
+                        timestamp_ms += 1
 
-                self.pending[timestamp_ms] = MPFrameContext(
-                    frame_bgr=frame_bgr, frame_index=frame_index
-                )
+                    self.pending[timestamp_ms] = MPFrameContext(
+                        frame_bgr=frame_bgr, frame_index=frame_index
+                    )
 
-                landmarker.detect_async(mp_image, timestamp_ms)
+                    landmarker.detect_async(mp_image, timestamp_ms)
 
-                frame_index += 1
+                    frame_index += 1
+        finally:
+            self.running = False
+            
+            try: self.synth.stop()
+            except Exception: pass
+
+            if self.cap is not None:
+                self.cap.release()
+
+            cv2.destroyAllWindows()
+            self.pending.clear()
 
 
 HAND_TASK_MODEL_PATH = "hand_landmarker.task"
-
 
 def main():
     cam = CameraHandler(HAND_TASK_MODEL_PATH)
