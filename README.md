@@ -4,6 +4,10 @@ How can I make using a synthesizer intuitive for the average user, using Compute
 
 Elementary controls for the synthesizer are operated with your hands, and sound playback operates on a timed loop. Sounds will Attack, Decay, Sustain, and Release before restarting. This lets you better understand the chord you've created!
 
+For more understanding of the timeline, follow this [presentation](https://docs.google.com/presentation/d/1sDdlktXYAuvMxP4pl61lq2GmVgRPhMfZiHRXvumgJyQ/edit?usp=sharing).
+
+Built by Gautam Khajuria (CCS Computing '29) at UCSB for Harlan Kringen's CMPTGCS 1L class!
+
 ## Building
 
 This is a long build process due to the various C++ and Python dependencies. Just stick with it, and all will be well!
@@ -106,4 +110,5 @@ Instead, it is better to just clone this repo, unpack it, and load it into VS. F
 
 ## Copyright
 <p>&copy; 2026 AirSynth. Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank" rel="noopener noreferrer">Affero General Public License</a>.</p>
+
 
