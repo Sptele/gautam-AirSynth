@@ -42,7 +42,7 @@ private:
 
 	PaStream* stream;
 
-	// I used LLM guidance in addition to online guides/docs to help understand C++ atomics 
+	// I used LLM guidance in addition to online guides/docsp to help understand C++ atomics 
 	std::atomic<bool> rebuild_pending{ false };
 	std::atomic<float> rebuild_pending_length{ static_cast<float>(LENGTH) };
 	std::atomic<bool> rebuild_shutdown{ false };

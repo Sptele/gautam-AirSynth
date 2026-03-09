@@ -105,7 +105,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\portaudio\include;C:\Users\Gautam Khajuria\source\repos\AirSynth\opencv\build\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\lib\site-packages\nanobind\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\Lib\site-packages\nanobind\src;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\Lib\site-packages\nanobind\ext\robin_map\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\portaudio\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\lib\site-packages\nanobind\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\include;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\Lib\site-packages\nanobind\src;C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\Lib\site-packages\nanobind\ext\robin_map\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -113,9 +113,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>portaudio_x64.lib;opencv_world4130d.lib;opencv_world4130.lib;python310.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>portaudio_x64.lib;python310.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/VERBOSE:LIB %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\libs;C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release;C:\Users\Gautam Khajuria\source\repos\AirSynth\opencv\build\x64\vc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\GautamKhajuria\AppData\Local\Programs\Python\Python310\libs;C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Users\Gautam Khajuria\source\repos\AirSynth\portaudio\Release\portaudio_x64.dll" "$(OutDir)"</Command>
