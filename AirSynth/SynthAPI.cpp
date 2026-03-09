@@ -51,7 +51,7 @@ void SynthAPI::stop()
 	stream = nullptr;
 }
 
-// AI-Guided
+// Guided by LLM - pseudocode
 void SynthAPI::rebuild_with_new_length(float new_length_sec)
 {
 	// Store length, indicate busy
@@ -60,7 +60,8 @@ void SynthAPI::rebuild_with_new_length(float new_length_sec)
 	start_rebuild_worker();
 }
 
-// AI-Guided
+// This function was workshopped with the help of an LLM (I tried to write it, AI showed me where I messed up, etc.)
+// Definitely the most complicated C++ function to me (multi-threading is still new to me!)
 void SynthAPI::start_rebuild_worker()
 {
 	if (rebuild_worker.joinable())

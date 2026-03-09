@@ -11,7 +11,7 @@ public:
 	ADSREnvelope() : tableLen(0) {}
 	~ADSREnvelope();
 
-	// deep-copy semantics
+	// Auto-gen
 	ADSREnvelope(const ADSREnvelope& other);
 	ADSREnvelope& operator=(const ADSREnvelope& other);
 

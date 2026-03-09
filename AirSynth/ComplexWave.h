@@ -38,9 +38,6 @@ public:
 		PaStreamCallbackFlags statusFlags,
 		void* userData);
 private:
-
-	// Atomic Stuff is AI-Guided
-	// I'll note that I actually learned A LOT about atomics through interacting with the code, even as I followed the AI
 	std::shared_ptr<std::vector<std::unique_ptr<Wave>>> waves;
 	float gain;
 };

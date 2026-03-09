@@ -6,16 +6,6 @@
 
 #include "ComplexWave.h"
 
-/**
- * API Requirements for the Synth
-
-The Synth must provide:
-- a function to create and add new waveforms
-    - These waveforms show be a harmonic series, specifically
-- etc...
-
- */
-
 #define TABLE_LEN 256
 #define LENGTH 3.0
 #define AMP 10.0
@@ -52,12 +42,12 @@ private:
 
 	PaStream* stream;
 
+	// I used LLM guidance in addition to online guides/docs to help understand C++ atomics 
 	std::atomic<bool> rebuild_pending{ false };
 	std::atomic<float> rebuild_pending_length{ static_cast<float>(LENGTH) };
 	std::atomic<bool> rebuild_shutdown{ false };
 	std::thread rebuild_worker;
-
-	void start_rebuild_worker();
+	void start_rebuild_worker(); 
 
 	void log(const std::string& log) const;
 };

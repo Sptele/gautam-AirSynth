@@ -28,8 +28,7 @@ Sine::~Sine()
 	delete[] table;
 }
 
-// Copy constructor: deep copies the table and copies scalar state.
-// The amp reference is bound to the same envelope as the source.
+// Auto-generated
 Sine::Sine(const Sine& other)
 	: tableLen(other.tableLen),
 	freq(other.freq),
@@ -45,8 +44,7 @@ Sine::Sine(const Sine& other)
 	std::copy_n(other.table, this->tableLen, this->table);
 }
 
-// Copy assignment: only allowed when table lengths match and amp reference is the same.
-// Throws std::invalid_argument if lengths differ or amp differs (reference cannot be reseated).
+// Auto-generated
 Sine& Sine::operator=(const Sine& other)
 {
 	if (this == &other) return *this;
@@ -61,7 +59,6 @@ Sine& Sine::operator=(const Sine& other)
 		throw std::invalid_argument("Sine::operator=: cannot assign Sine objects with different amp references.");
 	}
 
-	// copy scalar parameters
 	this->freq = other.freq;
 	this->left_phase = other.left_phase;
 	this->right_phase = other.right_phase;
@@ -70,7 +67,6 @@ Sine& Sine::operator=(const Sine& other)
 	this->length = other.length;
 	this->gain = other.gain;
 
-	// deep copy table contents
 	std::copy(other.table, other.table + this->tableLen, this->table);
 
 	return *this;
@@ -100,7 +96,7 @@ void Sine::print_table() const
 float Sine::interpolate(float i) const
 {
 	if (tableLen == 0 || table == nullptr)
-		return 0.0f;
+		return 0;
 
 	const int lower = static_cast<int>(std::floor(i));
 	const int higher = static_cast<int>(std::ceil(i));

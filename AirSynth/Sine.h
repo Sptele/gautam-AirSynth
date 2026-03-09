@@ -18,7 +18,8 @@ public:
     Sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain);
     Sine() : tableLen(0), amp(ADSREnvelope()) {};
     ~Sine() override;
-    // deep-copy semantics
+
+    // Auto-generated
     Sine(const Sine& other);
     Sine& operator=(const Sine& other);
 

@@ -1,4 +1,3 @@
-from hmac import new
 from math import fabs
 import time
 from dataclasses import dataclass
@@ -169,7 +168,7 @@ class CameraHandler:
         self.cap = cv2.VideoCapture(0)
         self.frame_length = 33
 
-        # AI-Guided
+        # LLM-guided detail I didn't even think of, but which is smart
         self.pending: dict[int, MPFrameContext] = {}
 
         self.tracking_data = TrackingData((True, True), [], [], 0.0, True, bounds.default_length)
@@ -182,7 +181,7 @@ class CameraHandler:
 
         self.running = True
 
-    # AI-Guided
+    # "running" flag was the idea of LLM
     def request_stop(self):
         if not self.running:
             return
@@ -209,11 +208,13 @@ class CameraHandler:
 
         h, w, c = frame.shape
 
+        # For some reason, I always struggle to flip the frame (in this project and my past one)
+        # So, I googled it and the Google AI thing showed me this
         display_frame = cv2.flip(frame, 1)
 
         if result.hand_landmarks:
 
-            # AI Guided
+            # AI-guided
             def mx(x_px): return (w - 1) - x_px
 
             for hand_idx, landmarks in enumerate(result.hand_landmarks):
@@ -222,7 +223,6 @@ class CameraHandler:
                 if result.handedness and hand_idx < len(result.handedness) and result.handedness[hand_idx]:
                     handedness = result.handedness[hand_idx][0].category_name
 
-                # Cover yo butt
                 if not handedness or handedness not in ("Left", "Right"):
                     handedness = "Right" if hand_idx == 0 else "Left"
 
@@ -283,6 +283,7 @@ class CameraHandler:
                     if (not self.tracking_data.hands_open[1] and
                         self.tracking_data.new_freq is not None and
                         self.tracking_data.new_gain is not None):  # If right hand is currently closed
+
                         # Show Frequency, Gain
                         cv2.putText(display_frame, f"{self.tracking_data.new_freq:.1f}hz", (mx(x)+35, y-15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
                         cv2.putText(display_frame, f"{self.tracking_data.new_gain*100:.0f}%", (mx(x)+35, y+15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
@@ -315,11 +316,12 @@ class CameraHandler:
         return True
 
     def compute_right_hand(self, lm, w, h) -> ROperations:
-        # Debounce is AI-Guided, but the inside of the if statements are human-written
+        # In attempting to figure out how to fix jitters, I stumbled upon the concept of debounce
+        # The Google AI & Copilot helped explain the implementation for this a lot
 
         # Debounce thresholds
         CLOSE_DEBOUNCE_FRAMES = 10
-        OPEN_REARM_FRAMES = 2
+        OPEN_REARM_FRAMES = 5
 
         hand_cl = self.is_hand_closed(lm, w, h)
 
@@ -396,11 +398,11 @@ class CameraHandler:
 
     def compute_left_hand(self, lm, w, h):
         # In the left hand, a fist **toggles** pause/play
-        # Pinch Logic is AI-Guided
+        # Pinch Logic is based off of Right Hand logic with some AI assistance
         
         hand_cl = self.is_hand_closed(lm, w, h, True)
 
-        # First frame of fist only (edge trigger)
+        # First frame of fist (edge trigger)
         if self.tracking_data.hands_open[0] and hand_cl:
             self.tracking_data.play = not self.tracking_data.play
 
@@ -413,7 +415,6 @@ class CameraHandler:
         pinching = self.index_thumb_closed(lm, DETECTION_RADIUS, w, h)
 
         ps = self.tracking_data.l_pinch
-
 
         if pinching:
             pinch_pos = (lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y)
@@ -478,7 +479,7 @@ class CameraHandler:
                     landmarker.detect_async(mp_image, timestamp_ms)
 
                     frame_index += 1
-        finally:
+        finally: # End
             self.running = False
             
             try: self.synth.stop()
