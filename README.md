@@ -81,21 +81,29 @@ The additive synthesizer currently has elementary controls for various elementar
 
 ## Contributions
 
-Libraries:
+### Libraries
 * **PortAudio**: All low-level audio output, including opening & spinning an audio stream, controlling the raw frequency of the speakers, and safely terminating the stream
 * **NanoBind**: Transpiling & Binding the C++ synthesizer code (including PortAudio operation) into Python modules
 * **OpenCV**: Getting camera input, displaying the live camera feed with text/circles added, and any internal modifications
 * **MediaPipe**: based on OpenCV input, getting the coordinates of each hand's landmarks ([21 points per hand](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker))
 
-LLM Usage:
-* Github Copilot & Google AI Overview was used...
+### LLM Usage
+* Github Copilot & Google AI Overview was used minimally as a guide for unfamiliar complex things (Thread-Safety/Atomics, Debounce logic, etc.)
+* They usually provided outlines, guides, and code mockups that I then wrote out manually in code
+* Copilot did, on occasion, generate workable code that made considerable improvements to existing code. In this case, I made sure to ask Copilot to understand how this logic worked (i.e. PinchState)
+
+### Theory
+* I learned about the ADSR Envelope with this [Berklee Video](https://www.youtube.com/watch?v=0YeT9Gr-sJA). However, the ADSR implementation was [modeled](https://www.desmos.com/calculator/z9mylxstri) and written by me
+* The synth was developed after reading this [tutorial by Giovanni De Poli](https://www.researchgate.net/profile/Giovanni-De-Poli/publication/245122776_A_Tutorial_on_Digital_Sound_Synthesis_Techniques/links/5460a5f50cf295b56162786e/A-Tutorial-on-Digital-Sound-Synthesis-Techniques.pdf) and other sources
+  - However, the equations given in this guide had to be customized to better fit my model
+
+Most other code was written by me, using logic that I designed and implemented.
 
 ## CSIL Notice
-This project is roughly 1.30Gb with dependencies and roughly 1.15Gb without. Thus, given only a 4GiB quota on CSIL (which is not adjustable), and in consideration with future classes/assignments, it is **not possible** to host this project on CSIL.
+This project is roughly 1.30GB with dependencies and roughly 1.15GB without. Thus, given only a 4GiB quota on CSIL (which is not adjustable), and in consideration with future classes/assignments, it is **not possible** to host this project on CSIL.
 
-Instead, it is easier to just clone this repo, unpack it, and load it into VS. Furthermore, file systems work differently on Linux than Windows, so this guide may not be compatible.
+Instead, it is better to just clone this repo, unpack it, and load it into VS. Furthermore, file systems work differently on Linux than Windows, so this guide may not be compatible.
 
 ## Copyright
+<p>&copy; 2026 AirSynth. Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank" rel="noopener noreferrer">Affero General Public License</a>.</p>
 
-
-  
