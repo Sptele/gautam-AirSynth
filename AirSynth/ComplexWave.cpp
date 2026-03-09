@@ -3,21 +3,22 @@
 
 ComplexWave::ComplexWave(float gain) : gain(gain)
 {
+	waves = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
 }
 
-ComplexWave::~ComplexWave()
-{
-	waves.clear();
-}
 
 ComplexWave::ComplexWave(const ComplexWave& o) : gain(o.gain)
 {
-	for (const auto& w : o.waves)
+	waves = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
+
+	auto rdr = std::atomic_load(&o.waves);
+	auto copy = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
+	for (const auto& w : *rdr)
 	{
-		synth().push_back(
-			w->clone()
-		);
+		copy->push_back(w->clone());
 	}
+
+	std::atomic_store(&waves, copy);
 }
 
 std::unique_ptr<Wave> ComplexWave::clone() const
@@ -27,12 +28,32 @@ std::unique_ptr<Wave> ComplexWave::clone() const
 
 void ComplexWave::add_sine(ADSREnvelope& amp_envelope, float freq, size_t tableLen, float length, float gain)
 {
-	synth().push_back(std::make_unique<Sine>(amp_envelope, freq, tableLen, length, gain));
+	auto curr = std::atomic_load(&waves);
+
+	auto copy = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
+	for (auto& w : *curr)
+	{
+		copy->push_back(w->clone());
+	}
+
+	copy->push_back(std::make_unique<Sine>(amp_envelope, freq, tableLen, length, gain));
+
+	std::atomic_store(&waves, copy);
 }
 
 void ComplexWave::add_complex(const ComplexWave& o)
 {
-	synth().push_back(std::make_unique<ComplexWave>(o));
+	auto curr = std::atomic_load(&waves);
+
+	auto copy = std::make_shared<std::vector<std::unique_ptr<Wave>>>();
+	for (auto& w : *curr)
+	{
+		copy->push_back(w->clone());
+	}
+
+	copy->push_back(o.clone());
+
+	std::atomic_store(&waves, copy);
 }
 
 void ComplexWave::generate_harmonic_series(float freq, float height, ADSREnvelope& amp_envelope, size_t tableLen, float length, float gain[])
@@ -46,7 +67,9 @@ void ComplexWave::generate_harmonic_series(float freq, float height, ADSREnvelop
 float ComplexWave::get_left_phase() const
 {
 	float sum = 0;
-	for (const std::unique_ptr<Wave>& s : waves)
+
+	auto rdr = std::atomic_load(&waves);
+	for (const std::unique_ptr<Wave>& s : *rdr)
 	{
 		sum += s->get_left_phase();
 	}
@@ -57,7 +80,10 @@ float ComplexWave::get_left_phase() const
 float ComplexWave::get_right_phase() const
 {
 	float sum = 0;
-	for (const std::unique_ptr<Wave>& s : waves)
+
+	auto rdr = std::atomic_load(&waves);
+
+	for (const std::unique_ptr<Wave>& s : *rdr)
 	{
 		sum += s->get_right_phase();
 	}
@@ -67,7 +93,9 @@ float ComplexWave::get_right_phase() const
 
 void ComplexWave::stream(unsigned int curr_frame)
 {
-	for (const std::unique_ptr<Wave>& s : this->waves)
+	auto rdr = std::atomic_load(&waves);
+
+	for (const std::unique_ptr<Wave>& s : *rdr)
 	{
 		s->stream(curr_frame);
 	}
@@ -85,8 +113,9 @@ int ComplexWave::stream(const void* inputBuffer, void* outputBuffer,
 
 	for (unsigned int i = 0; i < framesPerBuffer; ++i)
 	{
+		auto rdr = std::atomic_load(&cs->waves);
 
-		for (std::unique_ptr<Wave>& s : cs->waves)
+		for (std::unique_ptr<Wave>& s : *rdr)
 		{
 			s->stream(i);
 		}

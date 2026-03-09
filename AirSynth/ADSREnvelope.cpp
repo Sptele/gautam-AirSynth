@@ -87,16 +87,20 @@ void ADSREnvelope::print_table() const
 
 float ADSREnvelope::operator[](float i) const
 {
-	int lower = std::floor(i);
+	if (tableLen == 0 || table == nullptr)
+		return 0.0f;
 
-	if (lower == i) return i; // If i is integer, just return it to avoid computation
+	int lower = static_cast<int>(std::floor(i));
+	int higher = static_cast<int>(std::ceil(i));
 
-	int higher = std::ceil(i);
+	if (lower <= 0) return table[0];
+	if (higher >= static_cast<int>(tableLen)) return table[tableLen - 1];
 
-	if (lower < 0) return table[0];
-	if (higher >= tableLen) return table[tableLen - 1];
+	if (lower == higher) return table[lower];
 
-	return (table[lower] + table[higher]) / 2;
+	// linear interpolation (more correct than averaging endpoints for non-midpoints)
+	const float t = i - static_cast<float>(lower);
+	return table[lower] + (table[higher] - table[lower]) * t;
 }
 
  

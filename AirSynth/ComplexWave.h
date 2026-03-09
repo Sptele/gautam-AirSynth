@@ -10,7 +10,7 @@ class ComplexWave : public Wave
 {
 public:
 	ComplexWave(float gain);
-	~ComplexWave() override;
+	~ComplexWave() override = default;
 	ComplexWave(const ComplexWave& o);
 
 	std::unique_ptr<Wave> clone() const override;
@@ -24,7 +24,7 @@ public:
 	float get_right_phase() const override;
 	float get_gain() const override { return gain; }
 
-	std::vector<std::unique_ptr<Wave>>& synth() { return waves; }
+	std::vector<std::unique_ptr<Wave>>& synth() { return *std::atomic_load(&waves); }
 
 	void stream(unsigned int curr_frame) override;
 
@@ -35,7 +35,7 @@ public:
 		void* userData);
 private:
 
-	std::vector<std::unique_ptr<Wave>> waves;
+	std::shared_ptr<std::vector<std::unique_ptr<Wave>>> waves;
 	float gain;
 };
 

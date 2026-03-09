@@ -13,11 +13,9 @@ import os
 
 root = os.path.dirname(__file__)
 pyd_path = os.path.abspath( os.path.join(root, "..", "x64", "Debug") )
-print(pyd_path)
 sys.path.append(pyd_path)
 
 import AirSynth as syn
-print(dir(syn))
 
 """
 API Requirements for the Synth
@@ -46,15 +44,8 @@ class PinchState:
     """State for a pinch gesture interaction (e.g., left-hand pinch)."""
     active: bool = False
     base_pos: tuple[float, float] | None = None
-    base_freqs: list[float] = None
-    base_gains: list[float] = None
-
-    def __post_init__(self):
-        # Avoid mutable default args
-        if self.base_freqs is None:
-            self.base_freqs = []
-        if self.base_gains is None:
-            self.base_gains = []
+    
+    new_length: float | None = None
 
 
 @dataclass
@@ -64,9 +55,16 @@ class TrackingData:
     gains: list[float]
     gain: float
     play: bool
+    length: float
 
     # Left-hand pinch state
     l_pinch: PinchState | None = PinchState()
+
+    # Right-hand debounce (closed/open stability)
+    r_closed_frames: int = 0
+    r_open_frames: int = 0
+    r_new_armed: bool = True
+    r_is_closed_stable: bool = False
 
     new_freq: float | None = None
     new_gain: float | None = None
@@ -97,17 +95,63 @@ class TrackingDataBounds:
     min_gain: float
     max_gain: float
 
+    default_length: float
+    min_length: float 
+    max_length: float
+
     freq_inc: float | None = None
     gain_inc: float | None = None
+    length_inc: float | None = None
+
+    def compute_l_increment(self, w: float, h: float, base_pos: tuple[float, float]):
+        top_px = base_pos[1] * h
+        bot_px = h * (1.0 - base_pos[1])
+
+        top_px = max(1.0, top_px)
+        bot_px = max(1.0, bot_px)
+        
+        c_y_px = max(top_px, bot_px)
+
+        top = 0
+
+        if c_y_px == top_px:
+            top = self.max_length - self.default_length
+        else:
+            top = self.default_length - self.min_length
+
+        self.length_inc = top / c_y_px
 
     def compute_increments(self, h: float, w: float, base_pos: tuple[float, float]):
-        self.freq_inc = (self.max_freq - self.default_freq) / (h - base_pos[1] * h)
-        self.gain_inc = (self.max_gain - self.default_gain) / (w - base_pos[0] * w)
+        top_px = base_pos[1] * h
+        bot_px = h * (1.0 - base_pos[1])
+        left_px = base_pos[0] * w
+        right_px = w * (1.0 - base_pos[0])
+
+        c_y_px = max(top_px, bot_px)
+        c_x_px = max(left_px, right_px)
+
+        top_freq = 0
+        top_gain = 0
+
+        if c_y_px == top_px:
+            # Top was chosen, top = M -d
+            top_freq = self.max_freq - self.default_freq
+        else: top_freq = self.default_freq - self.min_freq
+
+        if c_x_px == right_px:
+            top_gain = self.max_gain - self.default_gain
+        else: top_gain = self.default_gain - self.min_gain
+
+        self.freq_inc = top_freq / c_y_px
+        self.gain_inc = top_gain / c_x_px
 
     def reset_increments(self):
         # reset instance fields
         self.freq_inc = None
         self.gain_inc = None
+    
+    def reset_l_increment(self):
+        self.length_inc = None
 
     def clamp_freq(self, freq: float) -> float:
         return max(self.min_freq, min(freq, self.max_freq))
@@ -115,8 +159,11 @@ class TrackingDataBounds:
     def clamp_gain(self, gain: float) -> float:
         return max(self.min_gain, min(gain, self.max_gain))
 
+    def clamp_length(self, length: float) -> float:
+        return max(self.min_length, min(length, self.max_length))
+
 class CameraHandler:
-    def __init__(self, model_path, bounds: TrackingDataBounds=TrackingDataBounds(440, 0, 2093, 0.25, 0, 2, True), TRACKER_NUM=9):
+    def __init__(self, model_path, bounds: TrackingDataBounds=TrackingDataBounds(440, 0, 2093, 0.25, 0, 2, 3, 1, 60), TRACKER_NUM=9):
         base_options = mp.tasks.BaseOptions(model_asset_path=model_path)
         vision_running_mode = mp.tasks.vision.RunningMode
 
@@ -135,12 +182,13 @@ class CameraHandler:
 
         self.pending: dict[int, MPFrameContext] = {}
 
-        self.tracking_data = TrackingData((True, True), [], [], 0.0, True)
+        self.tracking_data = TrackingData((True, True), [], [], 0.0, True, bounds.default_length)
 
         self.bounds = bounds
         self.TRACKER_NUM = TRACKER_NUM
 
         self.synth = syn.SynthAPI()
+        self.synth.start()
 
 
     def on_camera_frame(self, result: vision.HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
@@ -175,10 +223,11 @@ class CameraHandler:
 
                     cv2.circle(frame, (x, y), 3, color, thickness=12)
 
-                    INDEX_TIP, THUMB_TIP = 8, 4
+                    INDEX_TIP, THUMB_TIP = 20, 4
 
                     DETECTION_RADIUS = 25
-                    r_color = 255 if self.index_thumb_closed(landmarks, DETECTION_RADIUS, w, h) else 0
+                    tc = self.index_thumb_closed(landmarks, DETECTION_RADIUS, w, h)
+                    r_color = 255 if tc else 0
 
                     color = (r_color, 255, 255)
 
@@ -191,6 +240,13 @@ class CameraHandler:
                     y = int(landmarks[THUMB_TIP].y * h)
 
                     cv2.circle(frame, (x, y), 3, color, thickness=4)
+
+                    if tc and self.tracking_data.l_pinch.new_length:
+                        cv2.putText(frame, f"{self.tracking_data.l_pinch.new_length:.1f}s", (x + 35, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
+
+
+
+
 
                     
 
@@ -211,7 +267,9 @@ class CameraHandler:
 
                     cv2.circle(frame, (x, y), 3, color, thickness=12)
 
-                    if not self.tracking_data.hands_open[1]: # If right hand is currently closed
+                    if (not self.tracking_data.hands_open[1] and
+                        self.tracking_data.new_freq is not None and
+                        self.tracking_data.new_gain is not None):  # If right hand is currently closed
                         # Show Frequency, Gain
                         cv2.putText(frame, f"{self.tracking_data.new_freq:.1f}hz", (x+35, y-15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
                         cv2.putText(frame, f"{self.tracking_data.new_gain*100:.0f}%", (x+35, y+15), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
@@ -220,9 +278,12 @@ class CameraHandler:
         cv2.imshow("AirSynth", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            self.synth.stop()
+
             self.cap.release()
             cv2.destroyAllWindows()
             self.pending.clear()
+            
 
             return
 
@@ -246,24 +307,51 @@ class CameraHandler:
         return True
 
     def compute_right_hand(self, lm, w, h) -> ROperations:
+        # Debounce thresholds
+        CLOSE_DEBOUNCE_FRAMES = 10
+        OPEN_REARM_FRAMES = 2
+
         hand_cl = self.is_hand_closed(lm, w, h)
+
+        # update debounce counters (raw state)
+        if hand_cl:
+            self.tracking_data.r_closed_frames += 1
+            self.tracking_data.r_open_frames = 0
+        else:
+            self.tracking_data.r_open_frames += 1
+            self.tracking_data.r_closed_frames = 0
+
+        # When open has been stable long enough, re-arm and clear stable-closed latch
+        if self.tracking_data.r_open_frames >= OPEN_REARM_FRAMES:
+            self.tracking_data.r_new_armed = True
+            self.tracking_data.r_is_closed_stable = False
+
+        # Determine whether we have debounced into a stable closed state
+        closed_stable_now = hand_cl and (self.tracking_data.r_closed_frames >= CLOSE_DEBOUNCE_FRAMES)
 
         return_flag = ROperations.NOTHING
 
-        # Open -> Closed - Add to Tracking Data
-        if self.tracking_data.hands_open[1] and hand_cl: 
-            self.tracking_data.new_freq = self.bounds.clamp_freq(440) # New Frequency
-            self.tracking_data.new_gain = self.bounds.clamp_gain(0.25) # New Gain
+        # Trigger NEW exactly once when we first become stably closed
+        if closed_stable_now and not self.tracking_data.r_is_closed_stable and self.tracking_data.r_new_armed:
+            self.tracking_data.r_new_armed = False
+            self.tracking_data.r_is_closed_stable = True
+
+            self.tracking_data.new_freq = self.bounds.clamp_freq(self.bounds.default_freq)
+            self.tracking_data.new_gain = self.bounds.clamp_gain(self.bounds.default_gain)
 
             self.tracking_data.new_base_pos = (lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y)
-
             self.bounds.compute_increments(h, w, self.tracking_data.new_base_pos)
 
-            return_flag = ROperations.NEW
+            # Consider the hand "closed" for state machine purposes from this point
+            self.tracking_data.hands_open = (self.tracking_data.hands_open[0], False)
+            return ROperations.NEW
 
-        # Closed -> Closed - Update Current New Freq/Gain Values
-        elif not self.tracking_data.hands_open[1] and hand_cl:
-            if self.tracking_data.new_base_pos is not None and self.bounds.freq_inc is not None and self.bounds.gain_inc is not None:
+        # If we're in stable-closed mode, update the current values
+        if self.tracking_data.r_is_closed_stable and hand_cl:
+            if (self.tracking_data.new_base_pos is not None and
+                self.bounds.freq_inc is not None and self.bounds.gain_inc is not None and
+                self.tracking_data.new_freq is not None and self.tracking_data.new_gain is not None):
+
                 curr_x, curr_y = lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y
 
                 diff_y = -(curr_y - self.tracking_data.new_base_pos[1])
@@ -273,103 +361,108 @@ class CameraHandler:
                 self.tracking_data.new_gain = self.bounds.clamp_gain(self.bounds.default_gain - diff_x * w * self.bounds.gain_inc)
 
                 return_flag = ROperations.CONTINUE
-       
-        # Closed -> Open - Remove from Tracking Data, Append to Permanent List
-        elif not self.tracking_data.hands_open[1] and not hand_cl: 
-            freq, gain = self.tracking_data.pop()
 
-            self.synth.add_waveform_series(freq, gain)
+        # Commit on release (stable closed -> open)
+        if self.tracking_data.r_is_closed_stable and not hand_cl:
+            if self.tracking_data.new_freq is not None and self.tracking_data.new_gain is not None:
+                freq, gain = self.tracking_data.pop()
+
+                if freq > 0 and gain > 0:
+                    self.synth.add_waveform_series(freq, gain)
 
             self.bounds.reset_increments()
-
             return_flag = ROperations.DIE
 
-        # Open -> Open - Passive State
-        elif self.tracking_data.hands_open[1] and not hand_cl: 
-            pass # No-Op
-
-        # Always update hands
+        # Always update hands_open based on raw state (for UI coloring etc.)
         self.tracking_data.hands_open = (self.tracking_data.hands_open[0], not hand_cl)
 
         return return_flag
 
     
     def index_thumb_closed(self, lm, detection_radius: float, w, h):
-        index_tip, thumb_tip = 8, 4
+        index_tip, thumb_tip = 20, 4
         return (fabs(lm[index_tip].x - lm[thumb_tip].x) * w < detection_radius and
                 fabs(lm[index_tip].y - lm[thumb_tip].y) * h < detection_radius)
 
     def compute_left_hand(self, lm, w, h):
         # In the left hand, a fist **toggles** pause/play
-        # Pinching (index+thumb) lets you adjust ALL gains & ALL freqs
+        # Pinching (index+thumb) is reserved for future controls (see stubs below)
         hand_cl = self.is_hand_closed(lm, w, h, True)
 
         # First frame of fist only (edge trigger)
         if self.tracking_data.hands_open[0] and hand_cl:
             self.tracking_data.play = not self.tracking_data.play
 
+            if not self.tracking_data.play:
+                self.synth.stop()
+            else:
+                self.synth.start()
+
         DETECTION_RADIUS = 25
         pinching = self.index_thumb_closed(lm, DETECTION_RADIUS, w, h)
 
         ps = self.tracking_data.l_pinch
 
-        # When pinching: move up/down to shift ALL freqs; move left/right to shift ALL gains.
+        # --- Pinch gesture state machine (STUBS) ---
+        # These branches are intentionally left as no-ops, with state updates only.
+        # Implement pinch controls by filling in the three sections:
+        #   1) pinch start   : first frame the pinch is detected
+        #   2) pinch continue: subsequent frames while still pinching
+        #   3) pinch end     : first frame after pinching stops
+        #
+        # You can use ps.base_pos / ps.base_freqs / ps.base_gains to store baselines.
+
         if pinching:
             pinch_pos = (lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y)
 
-            # Pinch start: capture baseline once
             if not ps.active:
+                # PINCH START (edge)
+                # Triggered exactly once when the user transitions from not pinching -> pinching.
+                # Typical use:
+                #   - capture baseline hand position (ps.base_pos = pinch_pos)
+                #   - snapshot current synth params (ps.base_freqs/gains)
+                #   - compute any scaling increments (bounds.compute_increments(...))
                 ps.active = True
                 ps.base_pos = pinch_pos
-                ps.base_freqs = list(self.tracking_data.frequencies)
-                ps.base_gains = list(self.tracking_data.gains)
-
-                # If there is an in-progress (new) freq/gain, include them too
-                if self.tracking_data.new_freq is not None:
-                    ps.base_freqs.append(self.tracking_data.new_freq)
-                if self.tracking_data.new_gain is not None:
-                    ps.base_gains.append(self.tracking_data.new_gain)
-
-                if ps.base_pos is not None:
-                    self.bounds.compute_increments(h, w, ps.base_pos)
-
-            # Pinch continue: apply deltas relative to baseline
-            if ps.base_pos is not None and self.bounds.freq_inc is not None and self.bounds.gain_inc is not None:
-                curr_x, curr_y = pinch_pos
-                base_x, base_y = ps.base_pos
-
-                diff_y = -(curr_y - base_y)
-                diff_x = -(curr_x - base_x)
-
-                freq_delta = diff_y * h * self.bounds.freq_inc
-                gain_delta = -diff_x * w * self.bounds.gain_inc
-
-                if ps.base_freqs:
-                    self.tracking_data.frequencies = [
-                        self.bounds.clamp_freq(f + freq_delta)
-                        for f in ps.base_freqs[:len(self.tracking_data.frequencies)]
-                    ]
-
-                if ps.base_gains:
-                    self.tracking_data.gains = [
-                        self.bounds.clamp_gain(g + gain_delta)
-                        for g in ps.base_gains[:len(self.tracking_data.gains)]
-                    ]
-
-                # Also apply to the in-progress right-hand values (if present)
-                if self.tracking_data.new_freq is not None and len(ps.base_freqs) >= (len(self.tracking_data.frequencies) + 1):
-                    self.tracking_data.new_freq = self.bounds.clamp_freq(ps.base_freqs[-1] + freq_delta)
-                if self.tracking_data.new_gain is not None and len(ps.base_gains) >= (len(self.tracking_data.gains) + 1):
-                    self.tracking_data.new_gain = self.bounds.clamp_gain(ps.base_gains[-1] + gain_delta)
-
-        else:
-            # Pinch end: clear state
-            if ps.active:
-                ps.active = False
-                ps.base_pos = None
                 ps.base_freqs = []
                 ps.base_gains = []
-                self.bounds.reset_increments()
+
+                self.tracking_data.length = self.bounds.default_length
+
+                self.bounds.compute_l_increment(w, h, ps.base_pos)
+
+
+
+            else:
+                # PINCH CONTINUE
+                # Called every frame while the user remains pinching.
+                # Typical use:
+                #   - compute delta from ps.base_pos
+                #   - apply that delta to one or more tracked parameters
+                #   - clamp results using self.bounds.clamp_freq/clamp_gain
+                diff_y = ps.base_pos[1] - pinch_pos[1]
+
+                if self.bounds.length_inc:
+                    ps.new_length = self.bounds.clamp_length(self.bounds.default_length + diff_y * h * self.bounds.length_inc)
+
+        else:
+            if ps.active:
+                # PINCH END (edge)
+                # Triggered exactly once when the user transitions from pinching -> not pinching.
+                # Typical use:
+                #   - finalize/commit changes
+                #   - clear any temporary increments
+                #   - reset pinch state
+                ps.active = False
+                ps.base_pos = None
+                
+                self.tracking_data.length = ps.new_length
+
+                print(self.tracking_data.length)
+
+                ps.new_length = None
+
+
 
         # Always update left-hand open/closed state
         self.tracking_data.hands_open = (not hand_cl, self.tracking_data.hands_open[1])
