@@ -28,6 +28,7 @@ class MPFrameContext:
     frame_bgr: any
     frame_index: int
 
+# AI-Guided
 @dataclass
 class PinchState:
     """State for a pinch gesture interaction (e.g., left-hand pinch)."""
@@ -35,7 +36,6 @@ class PinchState:
     base_pos: tuple[float, float] | None = None
     
     new_length: float | None = None
-
 
 @dataclass
 class TrackingData:
@@ -169,6 +169,7 @@ class CameraHandler:
         self.cap = cv2.VideoCapture(0)
         self.frame_length = 33
 
+        # AI-Guided
         self.pending: dict[int, MPFrameContext] = {}
 
         self.tracking_data = TrackingData((True, True), [], [], 0.0, True, bounds.default_length)
@@ -181,6 +182,7 @@ class CameraHandler:
 
         self.running = True
 
+    # AI-Guided
     def request_stop(self):
         if not self.running:
             return
@@ -211,18 +213,17 @@ class CameraHandler:
 
         if result.hand_landmarks:
 
-            # AI Generated
+            # AI Guided
             def mx(x_px): return (w - 1) - x_px
 
-            # Draw each landmark as a filled circle.
             for hand_idx, landmarks in enumerate(result.hand_landmarks):
                 handedness = None
 
                 if result.handedness and hand_idx < len(result.handedness) and result.handedness[hand_idx]:
                     handedness = result.handedness[hand_idx][0].category_name
 
-                if handedness not in ("Left", "Right"):
-                    # If you prefer, you can `continue` instead of guessing.
+                # Cover yo butt
+                if not handedness or handedness not in ("Left", "Right"):
                     handedness = "Right" if hand_idx == 0 else "Left"
 
                 if handedness == "Left":
@@ -233,7 +234,6 @@ class CameraHandler:
 
                     r_color = 255 if not self.tracking_data.hands_open[0] else 0
                   
-                    # Alternate colors per hand for easier visual inspection.
                     color = (r_color, 0, 255)
 
                     x = int(landmarks[self.TRACKER_NUM].x * w)
@@ -272,13 +272,13 @@ class CameraHandler:
                     r_color = 255 if not self.tracking_data.hands_open[1] else 0
                     b_color = 255 if curr_op == ROperations.DIE else 0
 
-                    # Alternate colors per hand for easier visual inspection.
                     color = (r_color, 255, b_color)
 
                     x = int(landmarks[self.TRACKER_NUM].x * w)
                     y = int(landmarks[self.TRACKER_NUM].y * h)
 
                     cv2.circle(display_frame, (mx(x), y), 3, color, thickness=12)
+
 
                     if (not self.tracking_data.hands_open[1] and
                         self.tracking_data.new_freq is not None and
@@ -315,6 +315,8 @@ class CameraHandler:
         return True
 
     def compute_right_hand(self, lm, w, h) -> ROperations:
+        # Debounce is AI-Guided, but the inside of the if statements are human-written
+
         # Debounce thresholds
         CLOSE_DEBOUNCE_FRAMES = 10
         OPEN_REARM_FRAMES = 2
@@ -360,6 +362,7 @@ class CameraHandler:
                 self.bounds.freq_inc is not None and self.bounds.gain_inc is not None and
                 self.tracking_data.new_freq is not None and self.tracking_data.new_gain is not None):
 
+                
                 curr_x, curr_y = lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y
 
                 diff_y = -(curr_y - self.tracking_data.new_base_pos[1])
@@ -381,7 +384,6 @@ class CameraHandler:
             self.bounds.reset_increments()
             return_flag = ROperations.DIE
 
-        # Always update hands_open based on raw state (for UI coloring etc.)
         self.tracking_data.hands_open = (self.tracking_data.hands_open[0], not hand_cl)
 
         return return_flag
@@ -394,7 +396,8 @@ class CameraHandler:
 
     def compute_left_hand(self, lm, w, h):
         # In the left hand, a fist **toggles** pause/play
-        # Pinching (index+thumb) is reserved for future controls (see stubs below)
+        # Pinch Logic is AI-Guided
+        
         hand_cl = self.is_hand_closed(lm, w, h, True)
 
         # First frame of fist only (edge trigger)
@@ -416,7 +419,6 @@ class CameraHandler:
             pinch_pos = (lm[self.TRACKER_NUM].x, lm[self.TRACKER_NUM].y)
 
             if not ps.active: # Pinch Start
-        
                 ps.active = True
                 ps.base_pos = pinch_pos
 
@@ -445,7 +447,6 @@ class CameraHandler:
                 ps.new_length = None
 
 
-
         # Always update left-hand open/closed state
         self.tracking_data.hands_open = (not hand_cl, self.tracking_data.hands_open[1])
 
@@ -462,14 +463,11 @@ class CameraHandler:
                         print("Failed to read frame from camera. Exiting...")
                         break
 
-                    # MediaPipe Image expects RGB.
                     frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
                     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
 
-                    # LIVE_STREAM requires monotonically increasing timestamps (ms).
                     timestamp_ms = int(time.time() * 1000)
 
-                    # If frames arrive within same ms, ensure uniqueness.
                     while timestamp_ms in self.pending:
                         timestamp_ms += 1
 

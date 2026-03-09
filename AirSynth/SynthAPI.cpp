@@ -37,7 +37,6 @@ void SynthAPI::start()
 		log(std::string("Pa_StartStream failed: ") + Pa_GetErrorText(err));
 		Pa_CloseStream(stream);
 		stream = nullptr;
-		return;
 	}
 }
 
@@ -52,6 +51,7 @@ void SynthAPI::stop()
 	stream = nullptr;
 }
 
+// AI-Guided
 void SynthAPI::rebuild_with_new_length(float new_length_sec)
 {
 	// Store length, indicate busy
@@ -60,6 +60,7 @@ void SynthAPI::rebuild_with_new_length(float new_length_sec)
 	start_rebuild_worker();
 }
 
+// AI-Guided
 void SynthAPI::start_rebuild_worker()
 {
 	if (rebuild_worker.joinable())
