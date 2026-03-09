@@ -48,6 +48,14 @@ public:
 
     void rebuild_length(float new_length_sec) override { length = new_length_sec; }
 
+    void reset_phases() override
+    {
+        left_phase = 0;
+        right_phase = 0;
+        t_phase = 0;
+        amp_phase = 0;
+    }
+
 private:
     float* table;
     const size_t tableLen;

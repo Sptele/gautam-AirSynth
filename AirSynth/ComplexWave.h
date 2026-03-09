@@ -30,6 +30,8 @@ public:
 
 	void stream(unsigned int curr_frame) override;
 
+	void reset_phases() override;
+
 	static int stream(const void* inputBuffer, void* outputBuffer,
 		unsigned long framesPerBuffer,
 		const PaStreamCallbackTimeInfo* timeInfo,

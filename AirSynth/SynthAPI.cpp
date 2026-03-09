@@ -28,6 +28,8 @@ void SynthAPI::start()
 		return;
 	}
 
+	master.reset_phases();
+
 	err = Pa_StartStream(stream);
 
 	if (err != paNoError)

@@ -12,6 +12,7 @@ public:
 	virtual std::unique_ptr<Wave> clone() const = 0;
 
 	virtual void rebuild_length(float new_length_sec) {}
+	virtual void reset_phases() {}
 
 	virtual ~Wave() = default;
 

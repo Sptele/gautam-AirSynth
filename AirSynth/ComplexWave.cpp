@@ -118,6 +118,15 @@ void ComplexWave::stream(unsigned int curr_frame)
 	}
 }
 
+void ComplexWave::reset_phases()
+{
+	auto rdr = std::atomic_load(&waves);
+	for (const auto& w : *rdr)
+	{
+		w->reset_phases();
+	}
+}
+
 int ComplexWave::stream(const void* inputBuffer, void* outputBuffer,
 	unsigned long framesPerBuffer,
 	const PaStreamCallbackTimeInfo* timeInfo,

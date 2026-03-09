@@ -499,8 +499,6 @@ def main():
     cam = CameraHandler(HAND_TASK_MODEL_PATH)
 
     cam.spin()
-
-
     
     return 0
 
