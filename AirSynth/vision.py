@@ -21,6 +21,7 @@ class ROperations(Enum):
     NEW = 2
     CONTINUE = 3
     DIE = 4
+    ERROR = 5
 
 @dataclass
 class MPFrameContext:
@@ -269,6 +270,11 @@ class CameraHandler:
                     """
                     curr_op = self.compute_right_hand(landmarks, w, h)
 
+                    if curr_op == ROperations.ERROR:
+                        cv2.circle(display_frame, (mx(x), y), 3, (255, 0, 0), thickness = 16)
+
+                        continue
+
                     r_color = 255 if not self.tracking_data.hands_open[1] else 0
                     b_color = 255 if curr_op == ROperations.DIE else 0
 
@@ -380,11 +386,17 @@ class CameraHandler:
             if self.tracking_data.new_freq is not None and self.tracking_data.new_gain is not None:
                 freq, gain = self.tracking_data.pop()
 
-                if freq > 0 and gain > 0:
-                    self.synth.add_waveform_series(freq, gain, self.tracking_data.length)
+                if freq > 0 and gain > 0 and self.tracking_data.length:
+                    try:
+                        self.synth.add_waveform_series(freq, gain, self.tracking_data.length)
+                    except e:
+                        return_flag = ROperations.ERROR
+
 
             self.bounds.reset_increments()
-            return_flag = ROperations.DIE
+
+            if return_flag != ROperations.ERROR:
+                return_flag = ROperations.DIE
 
         self.tracking_data.hands_open = (self.tracking_data.hands_open[0], not hand_cl)
 
